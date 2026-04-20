@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react'
 import './App.css'
 
-const defaultText = 'ABRACADABRA'
-
 function sanitizeText(rawText, allowedSymbols) {
   const allowed = new Set(allowedSymbols)
   return rawText
@@ -109,19 +107,22 @@ function arithmeticDecode(code, length, ranges) {
 }
 
 function App() {
-  const [inputText, setInputText] = useState(defaultText)
-  const [modelRows, setModelRows] = useState(computeModel(defaultText))
-  const [decodeLength, setDecodeLength] = useState(defaultText.length)
+  const [inputText, setInputText] = useState('')
+  const [modelRows, setModelRows] = useState([])
+  const [decodeLengthInput, setDecodeLengthInput] = useState('')
 
   const ranges = useMemo(() => buildRanges(normalizeRows(modelRows)), [modelRows])
   const sanitizedInput = useMemo(
     () => sanitizeText(inputText, ranges.map((row) => row.symbol)),
     [inputText, ranges],
   )
+  const parsedDecodeLength = decodeLengthInput === '' ? NaN : Number(decodeLengthInput)
+  const hasValidDecodeLength = Number.isInteger(parsedDecodeLength) && parsedDecodeLength > 0
+
   const result = useMemo(() => arithmeticEncode(sanitizedInput, ranges), [sanitizedInput, ranges])
   const decodedText = useMemo(
-    () => arithmeticDecode(result.code, decodeLength, ranges),
-    [result.code, decodeLength, ranges],
+    () => arithmeticDecode(result.code, hasValidDecodeLength ? parsedDecodeLength : 0, ranges),
+    [result.code, hasValidDecodeLength, parsedDecodeLength, ranges],
   )
 
   const probabilityTotal = useMemo(
@@ -151,9 +152,9 @@ function App() {
 
   const autoBuildModel = () => {
     const clean = inputText.toUpperCase().replace(/[^A-Z]/g, '')
-    setModelRows(computeModel(clean || defaultText))
-    setDecodeLength((clean || defaultText).length)
-    setInputText(clean || defaultText)
+    setModelRows(computeModel(clean))
+    setDecodeLengthInput(clean ? String(clean.length) : '')
+    setInputText(clean)
   }
 
   return (
@@ -292,15 +293,20 @@ function App() {
           <input
             id="decode-length"
             type="number"
-            min="1"
-            value={decodeLength}
-            onChange={(event) => setDecodeLength(Number(event.target.value) || 1)}
+            min="0"
+            value={decodeLengthInput}
+            onChange={(event) => setDecodeLengthInput(event.target.value)}
           />
+          {!hasValidDecodeLength && (
+            <p className="warn">Decode length must be a non-zero positive integer.</p>
+          )}
           <p className="metric">
             Decoded output: <code>{decodedText || '(empty)'}</code>
           </p>
-          <p className={decodedText === sanitizedInput ? 'ok' : 'warn'}>
-            {decodedText === sanitizedInput ? 'Decode matches input.' : 'Decode does not match input.'}
+          <p className={hasValidDecodeLength && decodedText === sanitizedInput ? 'ok' : 'warn'}>
+            {hasValidDecodeLength && decodedText === sanitizedInput
+              ? 'Decode matches input.'
+              : 'Decode does not match input.'}
           </p>
         </div>
       </section>
