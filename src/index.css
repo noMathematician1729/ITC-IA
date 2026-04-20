@@ -1,7 +1,12 @@
 body {
   margin: 0;
   font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: #070707;
+  background-color: #070707;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(245, 222, 101, 0.2) 1px, transparent 0),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.15));
+  background-size: 18px 18px, 100% 100%;
+  background-attachment: fixed;
   color: #f0f0f0;
 }
 
