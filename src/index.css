@@ -15,7 +15,7 @@ body {
 }
 
 /* notebook dot grid on the whole page */
-body::before {
+/* body::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -23,7 +23,7 @@ body::before {
   background-size: 28px 28px;
   pointer-events: none;
   z-index: 0;
-}
+} */
 
 #root {
   position: relative;

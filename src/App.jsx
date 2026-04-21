@@ -79,35 +79,60 @@ function arithmeticDecode(code, length, ranges) {
 //   return <div className="cursor-glow" ref={ref} />
 // }
 
-/* ─────────────────────────────────────────
-   Particle Explode on Click
-───────────────────────────────────────── */
 function useClickParticles() {
   useEffect(() => {
-    const COLORS = ['#f5de65', '#f6aa43', '#ffe87a', '#e8d870', '#fff0a0']
-    const onClick = (e) => {
-      const count = 14 + Math.floor(Math.random() * 8)
-      for (let i = 0; i < count; i++) {
-        const el = document.createElement('div')
-        el.className = 'particle'
-        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.6
-        const dist = 40 + Math.random() * 90
-        const size = 4 + Math.random() * 6
-        const dur = 0.5 + Math.random() * 0.4
-        el.style.cssText = `
-          left:${e.clientX}px; top:${e.clientY}px;
-          width:${size}px; height:${size}px;
-          background:${COLORS[Math.floor(Math.random() * COLORS.length)]};
-          --tx:${Math.cos(angle) * dist}px;
-          --ty:${Math.sin(angle) * dist}px;
-          --dur:${dur}s;
-        `
-        document.body.appendChild(el)
-        setTimeout(() => el.remove(), dur * 1000 + 50)
+    const holes = []
+    const canvas = document.createElement('canvas')
+    canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;'
+    document.body.appendChild(canvas)
+    const ctx = canvas.getContext('2d')
+
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
+    resize()
+    window.addEventListener('resize', resize)
+
+    const DOT_SPACING = 28
+    const DOT_COLOR = 'rgba(245,222,101,0.18)'
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const now = Date.now()
+
+      for (let x = DOT_SPACING / 2; x < canvas.width; x += DOT_SPACING) {
+        for (let y = DOT_SPACING / 2; y < canvas.height; y += DOT_SPACING) {
+          let suppressed = false
+          for (const h of holes) {
+            const age = (now - h.born) / h.duration
+            if (age >= 1) continue
+            const eased = 1 - age * age
+            const radius = h.maxRadius * eased
+            const dist = Math.hypot(x - h.x, y - h.y)
+            if (dist < radius) { suppressed = true; break }
+          }
+          if (!suppressed) {
+            ctx.beginPath()
+            ctx.arc(x, y, 1.2, 0, Math.PI * 2)
+            ctx.fillStyle = DOT_COLOR
+            ctx.fill()
+          }
+        }
       }
+
+      holes.forEach((h, i) => { if (Date.now() - h.born > h.duration) holes.splice(i, 1) })
+      requestAnimationFrame(draw)
+    }
+    draw()
+
+    const onClick = (e) => {
+      holes.push({ x: e.clientX, y: e.clientY, born: Date.now(), maxRadius: 80 + Math.random() * 40, duration: 1000 + Math.random() * 500 })
     }
     window.addEventListener('click', onClick)
-    return () => window.removeEventListener('click', onClick)
+
+    return () => {
+      window.removeEventListener('click', onClick)
+      window.removeEventListener('resize', resize)
+      canvas.remove()
+    }
   }, [])
 }
 
